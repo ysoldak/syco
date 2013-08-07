@@ -105,12 +105,16 @@ def _install_nrpe_plugins():
     _install_nrpe_plugins_dependencies()
     x("cp -p {0}lib/nagios/plugins_nrpe/* /usr/lib64/nagios/plugins/".format(constant.SYCO_PATH))
 
+    #copy in extra plugins.
+    x("cp -r /opt/syco/var/nrpe/* /usr/lib64/nagios/plugins")
+
     # Set the sssd password
     nrpe_config = scopen.scOpen("/etc/nagios/nrpe.d/common.cfg")
     nrpe_config.replace("$(LDAPPASSWORD)", app.get_ldap_sssd_password())
     nrpe_config.replace("($LDAPURL)", config.general.get_ldap_hostname())
 
     # Change ownership of plugins to nrpe (from icinga/nagios)
+    x("adduser nrpe")
     x("chmod -R 750 /usr/lib64/nagios/plugins/")
     x("chown -R nrpe:nrpe /usr/lib64/nagios/plugins/")
 
@@ -144,6 +148,8 @@ def _install_nrpe_plugins_dependencies():
     nrpe_sudoers_file.add("nrpe ALL=NOPASSWD:/usr/lib64/nagios/plugins/check_clamscan")
     nrpe_sudoers_file.add("nrpe ALL=NOPASSWD:/usr/lib64/nagios/plugins/check_disk")
     nrpe_sudoers_file.add("nrpe ALL=NOPASSWD:/usr/lib64/nagios/plugins/get_services")
+    nrpe_sudoers_file.add("nrpe ALL=NOPASSWD:/usr/lib64/nagios/plugins/mysql/pmp-check-mysql-deleted-files")
+    nrpe_sudoers_file.add("nrpe ALL=NOPASSWD:/usr/lib64/nagios/plugins/mysql/pmp-check-mysql-file-privs")
 
     # Dependency for check_clamscan
     x("yum install -y perl-Proc-ProcessTable perl-Date-Calc")

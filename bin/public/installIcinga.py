@@ -236,8 +236,8 @@ def _setup_plugins():
     '''
     #Apache status
     x("cp /opt/syco/var/icinga/plugins/check_apachestatus.pl /usr/lib64/nagios/plugins/")
-    x("chown icinga:root /usr/lib64/nagios/plugins/check_apachestatus.pl")
-    x("chmod 770 /usr/lib64/nagios/plugins/check_apachestatus.pl")
+    x("chown icinga:nrpe /usr/lib64/nagios/plugins/check_apachestatus.pl")
+    x("chmod 771 -R /usr/lib64/nagios/plugins/")
 
 def _install_pnp4nagios():
     '''
