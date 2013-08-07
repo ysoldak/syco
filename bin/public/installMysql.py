@@ -131,7 +131,7 @@ def install_mysql(args):
   mysql_exec("GRANT SELECT, REPLICATION CLIENT, SHOW DATABASES, SUPER, PROCESS ON *.* " +
     "TO 'monitor'@'127.0.0.1' " + "IDENTIFIED BY '" + app.get_mysql_monitor_password() + "'"
   )
-    mysql_exec("GRANT SELECT, REPLICATION CLIENT, SHOW DATABASES, SUPER, PROCESS ON *.* " +
+  mysql_exec("GRANT SELECT, REPLICATION CLIENT, SHOW DATABASES, SUPER, PROCESS ON *.* " +
     "TO 'monitor'@'"+ monitor_server_front_ip +"' " + "IDENTIFIED BY '" + app.get_mysql_monitor_password() + "'"
   )
 

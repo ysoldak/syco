@@ -17,6 +17,7 @@ import iptables
 import net
 import scopen
 import version
+import ConfigParser
 
 
 __author__ = "elis.kullberg@netlight.com"
@@ -39,6 +40,7 @@ SCRIPT_VERSION = 1
 
 def build_commands(commands):
     commands.add("install-nrpe-client", install_nrpe, help="Installs NRPE daemon and nagios plugins for monitoring by remote server.")
+    commands.add("update-nrpe-config", update_nrpe, help="Installs NRPE daemon and nagios plugins for monitoring by remote server.")
 
 
 def install_nrpe(args):
@@ -52,6 +54,27 @@ def install_nrpe(args):
     _install_nrpe(args)
     version_obj.mark_executed()
 
+
+def update_nrpe(args):
+    '''
+    Update the nrpe config with new settings for nrpe deamon.
+    '''
+    #Reading config file
+    config = ConfigParser.ConfigParser()
+    config.read('/opt/syco/usr/syco-private/var/nagios/hosts_nrpe_config.cfg')
+    nrpe_config = scopen.scOpen("/etc/nagios/nrpe.d/common.cfg")
+
+    #Getting setting for host and modyfying command.cfg
+    try:        
+        for name, value in config.items(net.get_hostname()):
+            nrpe_config.replace("^command\[" + name + "\].*", value)
+            print '  %s = %s' % (name, value)
+        #Setting correct SQL password to config
+        nrpe_config.replace("$(SQLPASS)", app.get_mysql_monitor_password().replace("&","\&").replace("/","\/"))
+    
+    #No custom enteries for host passing
+    except Exception: 
+        pass
 
 def _install_nrpe(args):
     '''
