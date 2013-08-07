@@ -168,6 +168,7 @@ def setup_crontab():
   scOpen("/etc/cron.daily/viruscan.sh").replace(
     "${ADMIN_EMAIL}", config.general.get_admin_email()
   )
+  x("chmod 770 /etc/cron.daily/viruscan.sh")
 
 
 def setup_autostart_and_start():
