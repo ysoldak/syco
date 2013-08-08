@@ -93,6 +93,9 @@ def _install_icinga(args):
     # Enable SELinux
     _install_SELinux()
 
+    # Enable send_sms 
+    _install_SendSMS()
+
     # Restart all services
     x("service ido2db restart")
     x("service nrpe restart")
@@ -111,7 +114,7 @@ def _install_icinga_core(args):
     # Disable SELinux for now, Install icinga-packages.
     x("setenforce 0")
     install.rforge_repo()
-    x("yum -y install icinga icinga-idoutils-libdbi-mysql nagios-plugins-all nagios-plugins-nrpe")
+    x("yum -y install icinga icinga-idoutils-libdbi-mysql nagios-plugins-all nagios-plugins-nrpe perl-libwww-perl")
 
     # Set set up icinga mysql-database
     icinga_sql_password = _setup_icinga_mysql()
@@ -215,6 +218,26 @@ def _reload_icinga(args, reload=True):
     if reload:
         x("service icinga reload")
 
+def _install_SendSMS():
+    '''
+    Copying and setting up the send_sms config
+    '''
+    x("mkdir /opt/scripts")
+    x("mkdir /opt/tmp")
+    x("cp /opt/syco/var/icinga/scripts/send_sms.py /opt/scripts/")
+    x("chown icinga:root -R /opt/scripts")
+    x("chmod 772 -R /opt/scripts")
+    x("chown icinga:root -R /opt/tmp")
+    x("chmod 772 -R /opt/tmp")
+
+def _setup_plugins():
+    '''
+    Setting upp server plugins used by the icinga server for monitoring services.
+    '''
+    #Apache status
+    x("cp /opt/syco/var/icinga/plugins/check_apachestatus.pl /usr/lib64/nagios/plugins/")
+    x("chown icinga:nrpe /usr/lib64/nagios/plugins/check_apachestatus.pl")
+    x("chmod 771 -R /usr/lib64/nagios/plugins/")
 
 def _install_pnp4nagios():
     '''
