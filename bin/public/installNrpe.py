@@ -76,6 +76,10 @@ def update_nrpe(args):
     except Exception: 
         pass
 
+    #Restart nrpe so changes take effect    
+    x("/etc/init.d/nrpe restart")
+
+
 def _install_nrpe(args):
     '''
     The nrpe installation is quite standard - except that the stock NRPE.conf is replaced with a prepped one.
