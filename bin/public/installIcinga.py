@@ -46,6 +46,7 @@ SCRIPT_VERSION = 1
 def build_commands(commands):
     commands.add("install-icinga", install_icinga, help="Installs a icinga poller and web-interface for monitoring of remote hosts.")
     commands.add("reload-icinga", reload_icinga, help="Reloads the icinga object structure.")
+    commands.add("update-icinga", _update_icinga_config, help="Update the icinga host and service config")
 
 
 def install_icinga(args):
@@ -217,6 +218,17 @@ def _reload_icinga(args, reload=True):
 
     if reload:
         x("service icinga reload")
+
+def _update_icinga_config(args):
+    '''
+    Update the icinga config with new base config files from git repo
+    Also ask witch server that what service is installd and update monitoring service.
+    '''
+
+    hostList = _get_host_list()
+    _append_services_to_hostlist(hostList)
+    _build_icinga_config(hostList)
+
 
 def _install_SendSMS():
     '''
