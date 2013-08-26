@@ -168,6 +168,7 @@ def setup_crontab():
   scOpen("/etc/cron.daily/viruscan.sh").replace(
     "${ADMIN_EMAIL}", config.general.get_admin_email()
   )
+  x("chmod 770 /etc/cron.daily/viruscan.sh")
 
   # https://redmine.fareoffice.com/issues/61041
   x("/bin/chmod 0755 /etc/cron.daily/viruscan.sh")
