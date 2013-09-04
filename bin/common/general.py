@@ -300,7 +300,7 @@ def shell_run(command, user="root", cwd=None, events={}):
     cwd=cwd,
     events=events,
     withexitstatus=True,
-    timeout=10000
+    timeout=1000
   )
 
   app.print_verbose("---- Result (" + str(exit_status) + ")----", 2)

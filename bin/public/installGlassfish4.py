@@ -45,7 +45,7 @@ GLASSFISH_VERSION      = "glassfish-4.0"
 GLASSFISH_INSTALL_FILE = GLASSFISH_VERSION + ".zip"
 GLASSFISH_REPO_URL     = "http://192.168.122.12/files/" + GLASSFISH_INSTALL_FILE
 GLASSFISH_INSTALL_PATH = "/usr/local/glassfish4"
-GLASSFISH_DOMAINS_PATH = GLASSFISH_INSTALL_PATH + "glassfish/domains/"
+GLASSFISH_DOMAINS_PATH = GLASSFISH_INSTALL_PATH + "/glassfish/domains/"
 
 # The directory where JAVA stores temporary files.
 # Default is /tmp, but the partion that dir is stored on is set to "noexec", and
@@ -92,11 +92,15 @@ def install_glassfish(arg):
 	if False ==_is_glassfish_user_installed():
 		x('adduser glassfish')
 
-	#_install_jdk()
-	#_install_glassfish()
-	#_setup_glassfish4()
+	_install_jdk()
+	_install_glassfish()
+	_setup_glassfish4()
 	_install_mysql_connect()
 	_install_guice()
+	#
+	initialize_passwords()
+	_set_domain_passwords()
+
 
 def _is_glassfish_user_installed():
   '''
@@ -172,6 +176,7 @@ def _install_glassfish():
     # but our own script is a little bit better. It creates startup log files
     # and has a better "start user" functionality.
     x(GLASSFISH_INSTALL_PATH+"/bin/asadmin create-service")
+    x("su glassfish " + GLASSFISH_INSTALL_PATH + "/bin/asadmin start-domain")
 
 
 def _setup_glassfish4():
@@ -179,13 +184,13 @@ def _setup_glassfish4():
 	Setting Glassfish 4 properties
 	'''
 	asadmin_exec("delete-jvm-options -client")
-	#asadmin_exec("delete-jvm-options '-XX\:MaxPermSize=192m'")
-	#asadmin_exec("delete-jvm-options -Xmx512m")
+	asadmin_exec("delete-jvm-options '-XX\:MaxPermSize=192m'")
+	asadmin_exec("delete-jvm-options -Xmx512m")
 	
 	asadmin_exec("create-jvm-options -server")
-	#asadmin_exec("create-jvm-options -Xmx2048")
-	#asadmin_exec("create-jvm-options -Xms1024")
- 	#asadmin_exec("create-jvm-options '-XX\:MaxPermSize=1024'")
+	asadmin_exec("create-jvm-options -Xmx2048m")
+	asadmin_exec("create-jvm-options -Xms1024m")
+ 	asadmin_exec("create-jvm-options '-XX\:MaxPermSize=1024m'")
 	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.max-redeliveries=300")
 	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.redelivery-interval-internal-in-millis=300000")
 	asadmin_exec("set-log-file-format --target server-config ulf")
@@ -212,3 +217,70 @@ def _install_guice():
 	x("cp "+GUICE_NAME+ "/guice-assistedinject* "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
 	x("cp "+GUICE_NAME+ "/aopalliance* "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
 	x("cp "+GUICE_NAME+ "/javax.inject* "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
+
+
+
+def initialize_passwords():
+  '''
+  Initialize all passwords that used by the script.
+
+  This is done in the beginning of the script.
+  '''
+  app.get_glassfish_master_password()
+  app.get_glassfish_admin_password()
+
+def _set_domain_passwords():
+  '''
+  Security configuration
+
+  '''
+  asadmin_exec("stop-domain")
+
+  # Change master password, default=empty
+  asadmin_exec("change-master-password --savemasterpassword=true ",
+    admin_port=None,
+    events={
+      "(?i)Enter the current master password.*": "changeit\n",
+      "(?i)Enter the new master password.*": app.get_glassfish_master_password() + "\n",
+      "(?i)Enter the new master password again.*": app.get_glassfish_master_password() + "\n"
+    }
+  )
+
+  # Create new cert for https
+  os.chdir(GLASSFISH_DOMAINS_PATH + "/domain1/config/")
+  x("/usr/java/latest/bin/keytool -delete -alias s1as -keystore keystore.jks -storepass '" + app.get_glassfish_master_password() +"'")
+  x(
+    '/usr/java/latest/bin/keytool -keysize 2048 -genkey -alias s1as -keyalg RSA -dname "' +
+    'CN=' + config.general.get_organization_name() +
+    ',O=' + config.general.get_organization_name() +
+    ',L=' + config.general.get_locality() +
+    ',S=' + config.general.get_state() +
+    ',C=' + config.general.get_country_name() +
+    '" -validity 3650' +
+    " -keypass '" + app.get_glassfish_master_password() + "'" +
+    ' -keystore keystore.jks' +
+    " -storepass '" + app.get_glassfish_master_password() + "'"
+    
+  )
+  x("/usr/java/latest/bin/keytool -list -keystore keystore.jks -storepass '" + app.get_glassfish_master_password() + "'")
+
+  asadmin_exec("start-domain ")
+
+  # Change admin password
+  asadmin_exec("change-admin-password",
+    admin_port=None,
+    events={
+      "(?i)Enter admin user name.*": "admin\n",
+      "(?i)Enter the admin password.*": "\n",
+      "(?i)Enter the new admin password.*": app.get_glassfish_admin_password() + "\n",
+      "(?i)Enter the new admin password again.*": app.get_glassfish_admin_password() + "\n"
+    }
+  )
+
+  # Stores login info for glassfish user in /home/glassfish/.asadminpass
+  asadmin_exec("login",
+    events={
+      "Enter admin user name.*": "admin\n",
+      "Enter admin password.*": app.get_glassfish_admin_password() + "\n"
+    }
+  )
