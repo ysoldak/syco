@@ -193,9 +193,11 @@ def _setup_glassfish4():
  	asadmin_exec("create-jvm-options '-XX\:MaxPermSize=1024m'")
 	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.max-redeliveries=300")
 	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.redelivery-interval-internal-in-millis=300000")
-	asadmin_exec("set-log-file-format --target server-config ulf")
+	asadmin_exec("set-log-attributes com.sun.enterprise.server.logging.SyslogHandler.useSystemLogging=true")
+	asadmin_exec("set-log-attributes --target server-config com.sun.enterprise.server.logging.GFFileHandler.formatter=ulf")
 	asadmin_exec("set server.admin-service.das-config.autodeploy-enabled=false")
 	asadmin_exec("set server.admin-service.das-config.dynamic-reload-enabled=false")
+	asadmin_exec(" --host 127.0.0.1 --port 4848 enable-secure-admin")
 
 def _install_mysql_connect():
 	'''
@@ -248,22 +250,8 @@ def _set_domain_passwords():
 
   # Create new cert for https
   os.chdir(GLASSFISH_DOMAINS_PATH + "/domain1/config/")
-  x("/usr/java/latest/bin/keytool -delete -alias s1as -keystore keystore.jks -storepass '" + app.get_glassfish_master_password() +"'")
-  x(
-    '/usr/java/latest/bin/keytool -keysize 2048 -genkey -alias s1as -keyalg RSA -dname "' +
-    'CN=' + config.general.get_organization_name() +
-    ',O=' + config.general.get_organization_name() +
-    ',L=' + config.general.get_locality() +
-    ',S=' + config.general.get_state() +
-    ',C=' + config.general.get_country_name() +
-    '" -validity 3650' +
-    " -keypass '" + app.get_glassfish_master_password() + "'" +
-    ' -keystore keystore.jks' +
-    " -storepass '" + app.get_glassfish_master_password() + "'"
-    
-  )
-  x("/usr/java/latest/bin/keytool -list -keystore keystore.jks -storepass '" + app.get_glassfish_master_password() + "'")
-
+  x("/usr/java/latest/bin/keytool -delete -alias gtecybertrust5ca -keystore cacerts.jks -storepass '" + app.get_glassfish_master_password() +"'")
+  
   asadmin_exec("start-domain ")
 
   # Change admin password
@@ -284,3 +272,12 @@ def _set_domain_passwords():
       "Enter admin password.*": app.get_glassfish_admin_password() + "\n"
     }
   )
+
+  #Enabling admin on port 4848 from external ip
+  asadmin_exec(" --host 127.0.0.1 --port 4848 enable-secure-admin",
+  	events={
+      "Enter admin user name.*": "admin\n",
+      "Enter admin password.*": app.get_glassfish_admin_password() + "\n"
+    })
+  asadmin_exec("stop-domain ")
+  asadmin_exec("start-domain ")
