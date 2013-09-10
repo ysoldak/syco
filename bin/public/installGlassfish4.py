@@ -43,7 +43,7 @@ SCRIPT_VERSION = 2
 # NOTE: Remember to change path in "var/glassfish/glassfish-3.1.1"
 GLASSFISH_VERSION      = "glassfish-4.0"
 GLASSFISH_INSTALL_FILE = GLASSFISH_VERSION + ".zip"
-GLASSFISH_REPO_URL     = "http://192.168.122.12/files/" + GLASSFISH_INSTALL_FILE
+GLASSFISH_REPO_URL     = "http://packages.fareoffice.com/glassfish/" + GLASSFISH_INSTALL_FILE
 GLASSFISH_INSTALL_PATH = "/usr/local/glassfish4"
 GLASSFISH_DOMAINS_PATH = GLASSFISH_INSTALL_PATH + "/glassfish/domains/"
 
@@ -54,20 +54,20 @@ JAVA_TEMP_PATH = GLASSFISH_INSTALL_PATH + "tmp"
 
 # http://www.oracle.com/technetwork/java/javase/downloads/index.html
 JDK_INSTALL_FILE = "jdk-7u25-linux-x64.tar.gz"
-JDK_REPO_URL     = "http://192.168.122.12/files/%s" % (JDK_INSTALL_FILE)
+JDK_REPO_URL     = "http://packages.fareoffice.com/java/%s" % (JDK_INSTALL_FILE)
 JDK_INSTALL_PATH = "/usr/java/jdk1.7.0_25"
 JDK_VERSION = "jdk1.7.0_25"
 
 # Mysql Connector
 # http://ftp.sunet.se/pub/unix/databases/relational/mysql/Downloads/Connector-J/
 MYSQL_FILE_NAME="mysql-connector-java-5.1.26"
-MYSQL_CONNECTOR_REPO_URL    = "http://192.168.122.12/files/"+MYSQL_FILE_NAME+".tar.gz"
+MYSQL_CONNECTOR_REPO_URL    = "http://packages.fareoffice.com/mysql-connect/"+MYSQL_FILE_NAME+".tar.gz"
 
 
 # Google Guice
 # Is configured in _install_google_guice.
 GUICE_NAME="guice-3.0"
-GUICE_URL="http://192.168.122.12/files/"+GUICE_NAME+".zip"
+GUICE_URL="http://packages.fareoffice.com/guice/"+GUICE_NAME+".zip"
 
 
 def build_commands(commands):
