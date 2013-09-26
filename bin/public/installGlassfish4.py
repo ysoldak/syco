@@ -35,7 +35,7 @@ import iptables
 import install
 from general import x
 from scopen import scOpen
-
+import socket
 # The version of this module, used to prevent the same script version to be
 # executed more then once on the same host.
 SCRIPT_VERSION = 2
@@ -53,10 +53,10 @@ GLASSFISH_DOMAINS_PATH = GLASSFISH_INSTALL_PATH + "/glassfish/domains/"
 JAVA_TEMP_PATH = GLASSFISH_INSTALL_PATH + "tmp"
 
 # http://www.oracle.com/technetwork/java/javase/downloads/index.html
-JDK_INSTALL_FILE = "jdk-7u25-linux-x64.tar.gz"
+JDK_INSTALL_FILE = "jdk-7u40-linux-x64.tar.gz"
 JDK_REPO_URL     = "http://packages.fareoffice.com/java/%s" % (JDK_INSTALL_FILE)
-JDK_INSTALL_PATH = "/usr/java/jdk1.7.0_25"
-JDK_VERSION = "jdk1.7.0_25"
+JDK_INSTALL_PATH = "/usr/java/jdk1.7.0_40"
+JDK_VERSION = "jdk1.7.0_40"
 
 # Mysql Connector
 # http://ftp.sunet.se/pub/unix/databases/relational/mysql/Downloads/Connector-J/
@@ -139,8 +139,13 @@ def _install_jdk():
     if (os.access(JDK_INSTALL_FILE, os.F_OK)):
     	x("tar -zxvf "+JDK_INSTALL_FILE )
     	x("mv "+JDK_VERSION+" /usr/java")
-    	x("rm -f /usr/java/deafult")
-    	x("ln -s /usr/java/"+JDK_VERSION+" /usr/java/deafult")
+    	x("rm -f /usr/java/default")
+	x("rm -f /usr/java/latest")
+    	x("ln -s /usr/java/"+JDK_VERSION+" /usr/java/default")
+	x("ln -s /usr/java/default /usr/java/latest")
+	x("chown root:glassfish -R /usr/java/"+JDK_VERSION)
+	x("chmod 774 -R /usr/java/"+JDK_VERSION)
+	x("chmod 701 /usr/java")
     	x("alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 20000")
     	x("alternatives --install /usr/bin/jar jar /usr/java/latest/bin/jar 20000")
     	x("alternatives --install /usr/bin/java java /usr/java/latest/jre/bin/java 20000")
@@ -191,13 +196,38 @@ def _setup_glassfish4():
 	asadmin_exec("create-jvm-options -Xmx2048m")
 	asadmin_exec("create-jvm-options -Xms1024m")
  	asadmin_exec("create-jvm-options '-XX\:MaxPermSize=1024m'")
-	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.max-redeliveries=300")
-	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.redelivery-interval-internal-in-millis=300000")
+	asadmin_exec("set server.ejb-container.property.disable-nonportable-jndi-names=true")
+	asadmin_exec("set configs.config.server-config.ejb-container.ejb-timer-service.property.reschedule-failed-timer=true")
 	asadmin_exec("set-log-attributes com.sun.enterprise.server.logging.SyslogHandler.useSystemLogging=true")
 	asadmin_exec("set-log-attributes --target server-config com.sun.enterprise.server.logging.GFFileHandler.formatter=ulf")
 	asadmin_exec("set server.admin-service.das-config.autodeploy-enabled=false")
 	asadmin_exec("set server.admin-service.das-config.dynamic-reload-enabled=false")
 	asadmin_exec(" --host 127.0.0.1 --port 4848 enable-secure-admin")
+	
+	#Setting monitors levels
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.connector-connection-pool=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.connector-service=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.ejb-container=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.http-service=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.sip-service=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.jdbc-connection-pool=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.jms-service=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.jvm=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.orb=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.thread-pool=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.transaction-service=LOW")
+	asadmin_exec("set server.monitoring-service.module-monitoring-levels.web-container=LOW")
+	
+	#Set JMX settings
+	asadmin_exec("create-jvm-options -Dcom.sun.management.jmxremote")
+	asadmin_exec("create-jvm-options -Dcom.sun.management.jmxremote.port=8686")
+	asadmin_exec("create-jvm-options -Dcom.sun.management.jmxremote.local.only=false")
+	asadmin_exec("create-jvm-options -Dcom.sun.management.jmxremote.authenticate=false")
+	asadmin_exec("create-jvm-options -Dcom.sun.management.jmxremote.ssl=false")
+	asadmin_exec("create-jvm-options -Djava.rmi.server.hostname="+socket.gethostbyname(socket.gethostname()))
+
+
+
 
 def _install_mysql_connect():
 	'''
@@ -207,6 +237,7 @@ def _install_mysql_connect():
 	general.download_file(MYSQL_CONNECTOR_REPO_URL)
 	x("tar -zxvf "+MYSQL_FILE_NAME+".tar.gz")
 	x("\cp -f "+MYSQL_FILE_NAME+"/"+MYSQL_FILE_NAME+"-bin.jar "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
+	x("chown glassfish:glassfish -R "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/*")
 
 def _install_guice():
 	'''
@@ -219,6 +250,7 @@ def _install_guice():
 	x("cp "+GUICE_NAME+ "/guice-assistedinject* "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
 	x("cp "+GUICE_NAME+ "/aopalliance* "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
 	x("cp "+GUICE_NAME+ "/javax.inject* "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/")
+	x("chown glassfish:glassfish -R "+GLASSFISH_INSTALL_PATH+"/glassfish/domains/domain1/lib/ext/*")
 
 
 
