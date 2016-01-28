@@ -14,9 +14,9 @@ echo
 
 
 #
-echo "Override the hostname to vagrant-centos6"
-sed "s/HOSTNAME.*/HOSTNAME=vagrant-centos6/g" /etc/sysconfig/network
-hostname vagrant-centos6
+echo "Override the hostname to vagrant-centos7"
+sed "s/HOSTNAME.*/HOSTNAME=vagrant-centos7/g" /etc/sysconfig/network
+hostname vagrant-centos7
 
 
 # The vagrant virtual box uses DHCP, this ensures that the box resolves
